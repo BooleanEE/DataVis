@@ -11,7 +11,7 @@ Data Visualization Final Assignment - Develop interactive visualizations
 
 - Make sure you have the make command installed in your machine and has it defined in your environment variable path, otherwise it it is not going to work;
 - The command **make save** will save all libraries utilized in the project;  
-- The command **make install** will install all dependecies necessaries to run the code.  
+- The command **make install** will install all dependecies necessaries to run the code.
   
 When using **make save** and **make install**, make sure that you are on you virtual environment.  
 
