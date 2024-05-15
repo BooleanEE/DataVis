@@ -1,12 +1,8 @@
-#import dash
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-
-#from dash import dcc, html
-#from dash.dependencies import Input, Output
 
 # Data pre-processing
 
@@ -24,7 +20,23 @@ custom_black = 'rgba(0, 0, 0, 0.075)'  # Adjust the alpha value for lightness
 
 # Streamlit app
 def main():
+        
     st.title('Life Expectancy at Birth')
+
+    st.markdown("""
+    <style>
+        [data-testid=stSidebar] {
+            background-color: #0d214d;
+        }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 30rem;
+        }
+        .st-emotion-cache-1pbsqtx {
+            color: white;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     
     # Sidebar with multi-select dropdown menu
     selected_countries = st.sidebar.multiselect('Select a country or countries:', locations)
@@ -45,6 +57,7 @@ def main():
     fig.update_layout(height=800, width=1100)
     
     st.plotly_chart(fig)
+
 
 if __name__ == "__main__":
     main()
