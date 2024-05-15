@@ -34,6 +34,9 @@ def main():
         .st-emotion-cache-1pbsqtx {
             color: white;
         }
+        .st-emotion-cache-1jmvea6 {
+            color: white;
+        }
     </style>
     """, unsafe_allow_html=True)
     
