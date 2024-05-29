@@ -81,16 +81,24 @@ def main():
     # Remove legend
     fig.update_layout(showlegend=False)
 
+    # Set x-axis range to end at 2023
+    fig.update_layout(xaxis=dict(range=[filtered_df['Time'].min(), filtered_df['Time'].max()]))
 
-    # Increase the size of the chart
-    #fig.update_layout(height=800, width=1100)
+    # Change margin
+    fig.update_layout(margin=dict(r=120))
 
-        # Show the selected country name at the end of the time series
+    # Show the selected country name at the end of the time series
     if selected_countries:
-        fig.add_annotation(x=filtered_df['Time'].max(), y=filtered_df[selected_countries[0]].iloc[-1],
-                           text=selected_countries[0], showarrow=True, arrowhead=1, arrowcolor=dark_blue,
-                           arrowsize=2, arrowwidth=2)
-    
+            for country in selected_countries:
+                country_df = filtered_df[filtered_df['Location'] == country]
+                if not country_df.empty:
+                    max_time = country_df['Time'].max()
+                    latest_value = country_df[country_df['Time'] == max_time]['Value'].values[0]
+                    latest_rank = str(country_df[country_df['Time'] == max_time]['Rank'].values[0])
+                    fig.add_annotation(x=max_time, y=latest_value,
+                                    text=f"{latest_rank} {country}", showarrow=False,
+                                    align='left')
+
     st.plotly_chart(fig)
 
 if __name__ == "__main__":
