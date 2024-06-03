@@ -22,10 +22,15 @@ life_expectancy_at_0_45_60_all_df = life_expectancy_at_0_45_60_all_df[life_expec
 
 df = life_expectancy_at_0_45_60_all_df
 
+
+
 # Get unique location, sexes and specific ages
 ages = df['Age'].unique()
+
 locations = df['Location'].unique()
-#locations = np.insert(locations, 0, "All countries")
+location_highest_length = max(df['Location'].unique(), key=len)
+char_pad_digits_rank = 3
+highest_char_count = len(location_highest_length) + char_pad_digits_rank
 sexes = ["Female", "Male", "Both sexes"]
 
 # Custom shade of black (light black)
@@ -85,8 +90,8 @@ def main():
     fig.update_layout(xaxis=dict(range=[filtered_df['Time'].min(), filtered_df['Time'].max()]))
 
     # Change margin
-    fig.update_layout(margin=dict(r=120))
-
+    fig.update_layout(margin=dict(r=225))
+    
     # Show the selected country name at the end of the time series
     if selected_countries:
             for country in selected_countries:
@@ -95,9 +100,21 @@ def main():
                     max_time = country_df['Time'].max()
                     latest_value = country_df[country_df['Time'] == max_time]['Value'].values[0]
                     latest_rank = str(country_df[country_df['Time'] == max_time]['Rank'].values[0])
-                    fig.add_annotation(x=max_time, y=latest_value,
-                                    text=f"{latest_rank} {country}", showarrow=False,
-                                    align='left')
+                    char_sum_value_with_rank = len(latest_rank) + len(country)
+            
+                    if char_sum_value_with_rank != highest_char_count:
+                        padding = " " * (highest_char_count - char_sum_value_with_rank)
+                        text_annotation = f"{latest_rank} {country}{padding}"
+                    else:
+                        text_annotation = f"{latest_rank} {country}"
+
+                    fig.add_annotation(x=max_time, y=float(latest_value),
+                                    text=text_annotation, showarrow=False,
+                                    xshift=117,
+                                    font=dict(family="Courier New, monospace", size=10))
+                                            
+
+    #fig.update_annotations(align="left")
 
     st.plotly_chart(fig)
 
