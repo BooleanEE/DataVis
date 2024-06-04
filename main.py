@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 # Data pre-processing
@@ -40,7 +41,7 @@ dark_blue = 'rgb(0, 51, 102)'
 # Streamlit app
 def main():
         
-    st.title('Life Expectancy')
+    st.title('Life Expectancy - Ranking Time Series Visualization')
 
     st.markdown("""
     <style>
@@ -56,6 +57,16 @@ def main():
         .st-emotion-cache-1jmvea6 {
             color: white;
         }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 1rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            max-width: 100rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            padding-left: 10rem;
+            padding-right: 1rem;
+        }
     </style>
     """, unsafe_allow_html=True)
     
@@ -63,6 +74,7 @@ def main():
     selected_age = st.sidebar.selectbox('Select the specific age:', ages)
     selected_countries = st.sidebar.multiselect('Select a country or countries:', locations, default=None)
     selected_sex = st.sidebar.selectbox('Select the sex:', sexes)
+    selected_year = st.sidebar.selectbox('Select the year for the table:', list(range(1955, 2024)))
 
     # Filter dataframe based on selections
     filtered_df = life_expectancy_at_0_45_60_all_df[
@@ -72,7 +84,7 @@ def main():
 
     # Plot time series chart
     fig = px.line(filtered_df, x='Time', y='Value', color='Location',
-                  title=f'Life Expectancy at age {selected_age} for {selected_sex}',
+                  title=f'Life expectancy at age {selected_age} for {selected_sex}',
                   labels={'Time': 'Year', 'Value': 'Years expected to live at the specific age', 'Location': 'Country'},
                   width=1100, height=800)
     
@@ -91,6 +103,24 @@ def main():
 
     # Change margin
     fig.update_layout(margin=dict(r=225))
+
+    # Add annotations for selected countries
+    years_to_annotate = list(range(1950, 2021, 10))  # Annotate every decade from 1950 to 2020
+    if selected_countries:
+        for country in selected_countries:
+            country_df = filtered_df[filtered_df['Location'] == country]
+            if not country_df.empty:
+                for year in years_to_annotate:
+                    if year in country_df['Time'].values:
+                        year_data = country_df[country_df['Time'] == year].iloc[0]
+                        latest_rank = str(year_data['Rank'])
+                        
+                        fig.add_annotation(x=year, y=year_data['Value'],
+                                           text=latest_rank, showarrow=False,
+                                           yshift=5,
+                                           xshift=2,
+                                           font=dict(family="Courier New, monospace", size=10, color=dark_blue))
+                                            
     
     # Show the selected country name at the end of the time series
     if selected_countries:
@@ -111,12 +141,77 @@ def main():
                     fig.add_annotation(x=max_time, y=float(latest_value),
                                     text=text_annotation, showarrow=False,
                                     xshift=117,
-                                    font=dict(family="Courier New, monospace", size=10))
+                                    font=dict(family="Courier New, monospace", size=10, color=dark_blue))
                                             
 
     #fig.update_annotations(align="left")
 
     st.plotly_chart(fig)
+
+    # Calculate the year 5 years before the selected year
+    previous_year = selected_year - 5
+
+    # Filter data for selected year and previous year
+    current_df = df[(df['Time'] == selected_year) & (df['Age'] == selected_age)]
+    previous_df = df[(df['Time'] == previous_year) & (df['Age'] == selected_age)]
+
+    # Merge current and previous dataframes to compute rank changes
+    merge_df = pd.merge(current_df, previous_df, on=['Location', 'Age', 'Sex'], suffixes=('', '_prev'))
+
+    # Function to get rank change symbol
+    def get_change_symbol(change):
+        if change > 0:
+            return f"▲{change}"
+        elif change < 0:
+            return f"▼{abs(change)}"
+        else:
+            return "="
+
+    # Prepare data for the table
+    table_data = []
+    for location in current_df['Location'].unique():
+        male_current = merge_df[(merge_df['Location'] == location) & (merge_df['Sex'] == 'Male')]
+        female_current = merge_df[(merge_df['Location'] == location) & (merge_df['Sex'] == 'Female')]
+
+        male_rank = male_current['Rank'].values[0] if not male_current.empty else None
+        male_value = round(male_current['Value'].values[0], 2) if not male_current.empty else None
+        male_rank_prev = male_current['Rank_prev'].values[0] if not male_current.empty else None
+
+        female_rank = female_current['Rank'].values[0] if not female_current.empty else None
+        female_value = round(female_current['Value'].values[0], 2) if not female_current.empty else None
+        female_rank_prev = female_current['Rank_prev'].values[0] if not female_current.empty else None
+
+        male_change = get_change_symbol(male_rank_prev - male_rank) if male_rank and male_rank_prev else None
+        female_change = get_change_symbol(female_rank_prev - female_rank) if female_rank and female_rank_prev else None
+
+        table_data.append([male_rank, location, male_value, male_change, female_rank, location, female_value, female_change])
+
+    table_columns = ['RANK (MALE)', 'COUNTRY (MALE)', 'YEARS EXPECTED TO LIVE (MALE)', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year}) (MALE)',
+                     'RANK (FEMALE)', 'COUNTRY (FEMALE)', 'YEARS EXPECTED TO LIVE (FEMALE)', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year}) (FEMALE)']
+
+    # Convert to DataFrame
+    table_df = pd.DataFrame(table_data, columns=table_columns)
+
+    # Sort table by rank in descending order
+    table_df = table_df.sort_values(by=['RANK (MALE)', 'RANK (FEMALE)'], ascending=[True, True]).reset_index(drop=True)
+
+    # Create Plotly table
+    table_fig = go.Figure(data=[go.Table(
+        header=dict(values=table_columns,
+                    fill_color='paleturquoise',
+                    align='left'),
+        cells=dict(values=[table_df[col] for col in table_df.columns],
+                   fill_color='lavender',
+                   align='left'))
+    ])
+
+    # Add scroll to the table
+    table_fig.update_layout(
+        height=600,  # Adjust height as needed
+        margin=dict(l=20, r=20, t=20, b=20)
+    )
+
+    st.plotly_chart(table_fig)
 
 if __name__ == "__main__":
     main()
