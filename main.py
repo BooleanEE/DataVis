@@ -23,8 +23,6 @@ life_expectancy_at_0_45_60_all_df = life_expectancy_at_0_45_60_all_df[life_expec
 
 df = life_expectancy_at_0_45_60_all_df
 
-
-
 # Get unique location, sexes and specific ages
 ages = df['Age'].unique()
 
@@ -67,24 +65,31 @@ def main():
             padding-left: 10rem;
             padding-right: 1rem;
         }
+        h2 {
+            color: white;
+        }
     </style>
     """, unsafe_allow_html=True)
     
     # Sidebar with multi-select dropdown menu
-    selected_age = st.sidebar.selectbox('Select the specific age:', ages)
-    selected_countries = st.sidebar.multiselect('Select a country or countries:', locations, default=None)
-    selected_sex = st.sidebar.selectbox('Select the sex:', sexes)
-    selected_year = st.sidebar.selectbox('Select the year for the table:', list(range(1955, 2024)))
+    st.sidebar.header('Ranking Time Series')
+    selected_age_ts = st.sidebar.selectbox('Select the specific age:', ages, key='age_ts')
+    selected_countries = st.sidebar.multiselect('Select a country or countries:', locations, default=None, key='countries')
+    selected_sex = st.sidebar.selectbox('Select the sex:', sexes, key='sex')
 
-    # Filter dataframe based on selections
-    filtered_df = life_expectancy_at_0_45_60_all_df[
+    st.sidebar.header('Ranking Table')
+    selected_age_table = st.sidebar.selectbox('Select the specific age:', ages, key='age_table')
+    selected_year = st.sidebar.selectbox('Select the specific year:', list(range(1955, 2024)), key='year')
+
+    # Filter dataframe based on selections for time series
+    filtered_df_ts = life_expectancy_at_0_45_60_all_df[
         (life_expectancy_at_0_45_60_all_df['Sex'] == selected_sex) &
-        (life_expectancy_at_0_45_60_all_df['Age'] == selected_age)
+        (life_expectancy_at_0_45_60_all_df['Age'] == selected_age_ts)
     ]
 
     # Plot time series chart
-    fig = px.line(filtered_df, x='Time', y='Value', color='Location',
-                  title=f'Life expectancy at age {selected_age} for {selected_sex}',
+    fig = px.line(filtered_df_ts, x='Time', y='Value', color='Location',
+                  title=f'Life expectancy at age {selected_age_ts} for {selected_sex}',
                   labels={'Time': 'Year', 'Value': 'Years expected to live at the specific age', 'Location': 'Country'},
                   width=1100, height=800)
     
@@ -99,7 +104,7 @@ def main():
     fig.update_layout(showlegend=False)
 
     # Set x-axis range to end at 2023
-    fig.update_layout(xaxis=dict(range=[filtered_df['Time'].min(), filtered_df['Time'].max()]))
+    fig.update_layout(xaxis=dict(range=[filtered_df_ts['Time'].min(), filtered_df_ts['Time'].max()]))
 
     # Change margin
     fig.update_layout(margin=dict(r=225))
@@ -108,7 +113,7 @@ def main():
     years_to_annotate = list(range(1950, 2021, 10))  # Annotate every decade from 1950 to 2020
     if selected_countries:
         for country in selected_countries:
-            country_df = filtered_df[filtered_df['Location'] == country]
+            country_df = filtered_df_ts[filtered_df_ts['Location'] == country]
             if not country_df.empty:
                 for year in years_to_annotate:
                     if year in country_df['Time'].values:
@@ -125,7 +130,7 @@ def main():
     # Show the selected country name at the end of the time series
     if selected_countries:
             for country in selected_countries:
-                country_df = filtered_df[filtered_df['Location'] == country]
+                country_df = filtered_df_ts[filtered_df_ts['Location'] == country]
                 if not country_df.empty:
                     max_time = country_df['Time'].max()
                     latest_value = country_df[country_df['Time'] == max_time]['Value'].values[0]
@@ -144,16 +149,17 @@ def main():
                                     font=dict(family="Courier New, monospace", size=10, color=dark_blue))
                                             
 
-    #fig.update_annotations(align="left")
-
     st.plotly_chart(fig)
+
+    # Title for the table
+    st.title('Life Expectancy - Ranking Table')
 
     # Calculate the year 5 years before the selected year
     previous_year = selected_year - 5
 
     # Filter data for selected year and previous year
-    current_df = df[(df['Time'] == selected_year) & (df['Age'] == selected_age)]
-    previous_df = df[(df['Time'] == previous_year) & (df['Age'] == selected_age)]
+    current_df = df[(df['Time'] == selected_year) & (df['Age'] == selected_age_table)]
+    previous_df = df[(df['Time'] == previous_year) & (df['Age'] == selected_age_table)]
 
     # Merge current and previous dataframes to compute rank changes
     merge_df = pd.merge(current_df, previous_df, on=['Location', 'Age', 'Sex'], suffixes=('', '_prev'))
@@ -168,7 +174,8 @@ def main():
             return "="
 
     # Prepare data for the table
-    table_data = []
+    male_data = []
+    female_data = []
     for location in current_df['Location'].unique():
         male_current = merge_df[(merge_df['Location'] == location) & (merge_df['Sex'] == 'Male')]
         female_current = merge_df[(merge_df['Location'] == location) & (merge_df['Sex'] == 'Female')]
@@ -176,15 +183,22 @@ def main():
         male_rank = male_current['Rank'].values[0] if not male_current.empty else None
         male_value = round(male_current['Value'].values[0], 2) if not male_current.empty else None
         male_rank_prev = male_current['Rank_prev'].values[0] if not male_current.empty else None
+        male_change = get_change_symbol(male_rank_prev - male_rank) if male_rank and male_rank_prev else None
 
         female_rank = female_current['Rank'].values[0] if not female_current.empty else None
         female_value = round(female_current['Value'].values[0], 2) if not female_current.empty else None
         female_rank_prev = female_current['Rank_prev'].values[0] if not female_current.empty else None
-
-        male_change = get_change_symbol(male_rank_prev - male_rank) if male_rank and male_rank_prev else None
         female_change = get_change_symbol(female_rank_prev - female_rank) if female_rank and female_rank_prev else None
 
-        table_data.append([male_rank, location, male_value, male_change, female_rank, location, female_value, female_change])
+        male_data.append([male_rank, location, male_value, male_change])
+        female_data.append([female_rank, location, female_value, female_change])
+
+    male_data = sorted(male_data, key=lambda x: x[0])  # Sort by male rank
+    female_data = sorted(female_data, key=lambda x: x[0])  # Sort by female rank
+
+    table_data = []
+    for male, female in zip(male_data, female_data):
+        table_data.append(male + female)
 
     table_columns = ['RANK (MALE)', 'COUNTRY (MALE)', 'YEARS EXPECTED TO LIVE (MALE)', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year}) (MALE)',
                      'RANK (FEMALE)', 'COUNTRY (FEMALE)', 'YEARS EXPECTED TO LIVE (FEMALE)', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year}) (FEMALE)']
@@ -192,17 +206,15 @@ def main():
     # Convert to DataFrame
     table_df = pd.DataFrame(table_data, columns=table_columns)
 
-    # Sort table by rank in descending order
-    table_df = table_df.sort_values(by=['RANK (MALE)', 'RANK (FEMALE)'], ascending=[True, True]).reset_index(drop=True)
-
     # Create Plotly table
     table_fig = go.Figure(data=[go.Table(
         header=dict(values=table_columns,
-                    fill_color='paleturquoise',
+                    fill_color=[dark_blue,dark_blue,dark_blue,dark_blue,'red','red','red','red'],
+                    font=dict(color='white'),
                     align='left'),
         cells=dict(values=[table_df[col] for col in table_df.columns],
-                   fill_color='lavender',
-                   align='left'))
+                   fill_color='white',
+                   align='center'))
     ])
 
     # Add scroll to the table
