@@ -20,7 +20,6 @@ life_expectancy_at_0_45_60_all_df['Rank'] = life_expectancy_at_0_45_60_all_df['R
 expected_sexes = ['Female', 'Male', 'Both sexes']
 life_expectancy_at_0_45_60_all_df = life_expectancy_at_0_45_60_all_df[life_expectancy_at_0_45_60_all_df['Sex'].isin(expected_sexes)]
 
-
 df = life_expectancy_at_0_45_60_all_df
 
 # Get unique location, sexes and specific ages
@@ -35,10 +34,10 @@ sexes = ["Female", "Male", "Both sexes"]
 # Custom shade of black (light black)
 light_dark_blue = 'rgba(0, 51, 102, 0.1)'  # Adjust the alpha value for lightness
 dark_blue = 'rgb(0, 51, 102)'
+dark_red = 'rgb(155,0,0)'
 
 # Streamlit app
 def main():
-        
     st.title('Life Expectancy - Ranking Time Series Visualization')
 
     st.markdown("""
@@ -70,7 +69,7 @@ def main():
         }
     </style>
     """, unsafe_allow_html=True)
-    
+
     # Sidebar with multi-select dropdown menu
     st.sidebar.header('Ranking Time Series')
     selected_age_ts = st.sidebar.selectbox('Select the specific age:', ages, key='age_ts')
@@ -92,10 +91,10 @@ def main():
                   title=f'Life expectancy at age {selected_age_ts} for {selected_sex}',
                   labels={'Time': 'Year', 'Value': 'Years expected to live at the specific age', 'Location': 'Country'},
                   width=1100, height=800)
-    
+
     # Set line color to custom shade of dark blue for all lines
     fig.update_traces(line=dict(color=light_dark_blue))
-    
+
     # If a specific country is selected, change its line color to normal dark blue
     for country in selected_countries:
         fig.for_each_trace(lambda trace: trace.update(line=dict(color=dark_blue)) if trace.name == country else ())
@@ -119,35 +118,33 @@ def main():
                     if year in country_df['Time'].values:
                         year_data = country_df[country_df['Time'] == year].iloc[0]
                         latest_rank = str(year_data['Rank'])
-                        
+
                         fig.add_annotation(x=year, y=year_data['Value'],
                                            text=latest_rank, showarrow=False,
                                            yshift=5,
                                            xshift=2,
                                            font=dict(family="Courier New, monospace", size=10, color=dark_blue))
-                                            
-    
+
     # Show the selected country name at the end of the time series
     if selected_countries:
-            for country in selected_countries:
-                country_df = filtered_df_ts[filtered_df_ts['Location'] == country]
-                if not country_df.empty:
-                    max_time = country_df['Time'].max()
-                    latest_value = country_df[country_df['Time'] == max_time]['Value'].values[0]
-                    latest_rank = str(country_df[country_df['Time'] == max_time]['Rank'].values[0])
-                    char_sum_value_with_rank = len(latest_rank) + len(country)
-            
-                    if char_sum_value_with_rank != highest_char_count:
-                        padding = " " * (highest_char_count - char_sum_value_with_rank)
-                        text_annotation = f"{latest_rank} {country}{padding}"
-                    else:
-                        text_annotation = f"{latest_rank} {country}"
+        for country in selected_countries:
+            country_df = filtered_df_ts[filtered_df_ts['Location'] == country]
+            if not country_df.empty:
+                max_time = country_df['Time'].max()
+                latest_value = country_df[country_df['Time'] == max_time]['Value'].values[0]
+                latest_rank = str(country_df[country_df['Time'] == max_time]['Rank'].values[0])
+                char_sum_value_with_rank = len(latest_rank) + len(country)
 
-                    fig.add_annotation(x=max_time, y=float(latest_value),
-                                    text=text_annotation, showarrow=False,
-                                    xshift=117,
-                                    font=dict(family="Courier New, monospace", size=10, color=dark_blue))
-                                            
+                if char_sum_value_with_rank != highest_char_count:
+                    padding = " " * (highest_char_count - char_sum_value_with_rank)
+                    text_annotation = f"{latest_rank} {country}{padding}"
+                else:
+                    text_annotation = f"{latest_rank} {country}"
+
+                fig.add_annotation(x=max_time, y=float(latest_value),
+                                   text=text_annotation, showarrow=False,
+                                   xshift=117,
+                                   font=dict(family="Courier New, monospace", size=10, color=dark_blue))
 
     st.plotly_chart(fig)
 
@@ -181,12 +178,12 @@ def main():
         female_current = merge_df[(merge_df['Location'] == location) & (merge_df['Sex'] == 'Female')]
 
         male_rank = male_current['Rank'].values[0] if not male_current.empty else None
-        male_value = round(male_current['Value'].values[0], 2) if not male_current.empty else None
+        male_value = f"{male_current['Value'].values[0]:.2f}" if not male_current.empty else None
         male_rank_prev = male_current['Rank_prev'].values[0] if not male_current.empty else None
         male_change = get_change_symbol(male_rank_prev - male_rank) if male_rank and male_rank_prev else None
 
         female_rank = female_current['Rank'].values[0] if not female_current.empty else None
-        female_value = round(female_current['Value'].values[0], 2) if not female_current.empty else None
+        female_value = f"{female_current['Value'].values[0]:.2f}" if not female_current.empty else None
         female_rank_prev = female_current['Rank_prev'].values[0] if not female_current.empty else None
         female_change = get_change_symbol(female_rank_prev - female_rank) if female_rank and female_rank_prev else None
 
@@ -200,22 +197,23 @@ def main():
     for male, female in zip(male_data, female_data):
         table_data.append(male + female)
 
-    table_columns = ['RANK (MALE)', 'COUNTRY (MALE)', 'YEARS EXPECTED TO LIVE (MALE)', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year}) (MALE)',
-                     'RANK (FEMALE)', 'COUNTRY (FEMALE)', 'YEARS EXPECTED TO LIVE (FEMALE)', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year}) (FEMALE)']
+    table_columns = ['RANK (MALE)', 'COUNTRY', 'YEARS EXPECTED TO LIVE', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year})',
+                     'RANK (FEMALE)', 'COUNTRY ', 'YEARS EXPECTED TO LIVE ', f'CHANGE IN 5 YEARS ({previous_year}-{selected_year}) ']
 
     # Convert to DataFrame
     table_df = pd.DataFrame(table_data, columns=table_columns)
 
     # Create Plotly table
     table_fig = go.Figure(data=[go.Table(
+        columnwidth=[15, 25, 12, 15, 15, 25, 12, 15],  # Adjust widths as needed
         header=dict(values=table_columns,
-                    fill_color=[dark_blue,dark_blue,dark_blue,dark_blue,'red','red','red','red'],
+                    fill_color=[dark_blue, dark_blue, dark_blue, dark_blue, 'black', 'black', 'black', 'black'],
                     font=dict(color='white'),
-                    align='left'),
+                    align=['center', 'left', 'right', 'center', 'center', 'left', 'right', 'center']),
         cells=dict(values=[table_df[col] for col in table_df.columns],
                    fill_color='white',
-                   align='center'))
-    ])
+                   align=['center', 'left', 'right', 'center', 'center', 'left', 'right', 'center'])
+    )])
 
     # Add scroll to the table
     table_fig.update_layout(
