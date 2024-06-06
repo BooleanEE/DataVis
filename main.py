@@ -36,9 +36,60 @@ light_dark_blue = 'rgba(0, 51, 102, 0.1)'  # Adjust the alpha value for lightnes
 dark_blue = 'rgb(0, 51, 102)'
 dark_red = 'rgb(155,0,0)'
 
-# Streamlit app
-def main():
-    st.title('Life Expectancy - Ranking Time Series Visualization')
+# Arrays de países por região e sub-região
+africa = {
+    "All": ["Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo", "Dem. Rep. of the Congo", "Côte d'Ivoire", "Djibouti", "Egypt", "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Mayotte", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Réunion", "Rwanda", "Saint Helena", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara", "Zambia", "Zimbabwe"],
+    "Eastern Africa": ["Burundi", "Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Malawi", "Mauritius", "Mayotte", "Mozambique", "Réunion", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Uganda", "United Republic of Tanzania", "Zambia", "Zimbabwe"],
+    "Middle Africa": ["Angola", "Cameroon", "Central African Republic", "Chad", "Congo", "Dem. Rep. of the Congo", "Equatorial Guinea", "Gabon", "Sao Tome and Principe"],
+    "Northern Africa": ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"],
+    "Southern Africa": ["Botswana", "Eswatini", "Lesotho", "Namibia", "South Africa"],
+    "Western Africa": ["Benin", "Burkina Faso", "Cabo Verde", "Côte d'Ivoire", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Saint Helena", "Senegal", "Sierra Leone", "Togo"]
+}
+
+asia = {
+    "All ": ["Afghanistan", "Armenia", "Azerbaijan", "Bahrain", "Bangladesh", "Bhutan", "Brunei Darussalam", "Cambodia", "China", "China, Hong Kong SAR", "China, Macao SAR", "China, Taiwan Province of China", "Cyprus", "Dem. People's Rep. of Korea", "Georgia", "India", "Indonesia", "Iran (Islamic Republic of)", "Iraq", "Israel", "Japan", "Jordan", "Kazakhstan", "Kuwait", "Kyrgyzstan", "Lao People's Dem. Republic", "Lebanon", "Malaysia", "Maldives", "Mongolia", "Myanmar", "Nepal", "Oman", "Pakistan", "Philippines", "Qatar", "Republic of Korea", "Saudi Arabia", "Singapore", "Sri Lanka", "State of Palestine", "Syrian Arab Republic", "Tajikistan", "Thailand", "Timor-Leste", "Turkmenistan", "Türkiye", "United Arab Emirates", "Uzbekistan", "Viet Nam", "Yemen"],
+    "Eastern Asia": ["China", "China, Hong Kong SAR", "China, Macao SAR", "China, Taiwan Province of China", "Dem. People's Rep. of Korea", "Japan", "Mongolia", "Republic of Korea"],
+    "Central Asia": ["Kazakhstan", "Kyrgyzstan", "Tajikistan", "Turkmenistan", "Uzbekistan"],
+    "Southern Asia": ["Afghanistan", "Bangladesh", "Bhutan", "India", "Iran (Islamic Republic of)", "Maldives", "Nepal", "Pakistan", "Sri Lanka"],
+    "South-Eastern Asia": ["Brunei Darussalam", "Cambodia", "Indonesia", "Lao People's Dem. Republic", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Timor-Leste", "Viet Nam"],
+    "Western Asia": ["Armenia", "Azerbaijan", "Bahrain", "Cyprus", "Georgia", "Iraq", "Israel", "Jordan", "Kuwait", "Lebanon", "Oman", "Qatar", "Saudi Arabia", "State of Palestine", "Syrian Arab Republic", "Türkiye", "United Arab Emirates", "Yemen"]
+}
+
+europe = {
+    "All  ": ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Czechia", "Denmark", "Estonia", "Faroe Islands", "Finland", "France", "Germany", "Gibraltar", "Greece", "Guernsey", "Hungary", "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Kosovo (under UNSC res. 1244)", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Republic of Moldova", "Romania", "Russian Federation", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom"],
+    "Eastern Europe": ["Belarus", "Bulgaria", "Czechia", "Hungary", "Poland", "Republic of Moldova", "Romania", "Russian Federation", "Slovakia", "Ukraine"],
+    "Northern Europe": ["Denmark", "Estonia", "Faroe Islands", "Finland", "Guernsey", "Iceland", "Ireland", "Isle of Man", "Jersey", "Latvia", "Lithuania", "Norway", "Sweden", "United Kingdom"],
+    "Southern Europe": ["Albania", "Andorra", "Bosnia and Herzegovina", "Croatia", "Gibraltar", "Greece", "Italy", "Kosovo (under UNSC res. 1244)", "Malta", "Montenegro", "North Macedonia", "Portugal", "San Marino", "Serbia", "Slovenia", "Spain"],
+    "Western Europe": ["Austria", "Belgium", "France", "Germany", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands", "Switzerland"]
+}
+
+america = {
+    "All   ": ["Argentina", "Belize", "Bermuda", "Bolivia (Plurinational State of)", "Brazil", "Canada", "Chile", "Colombia", "Costa Rica", "Ecuador", "Falkland Islands (Malvinas)", "French Guiana", "Greenland", "Guatemala", "Guyana", "Honduras", "Mexico", "Nicaragua", "Panama", "Paraguay", "Peru", "Saint Pierre and Miquelon", "Suriname", "United States of America", "Uruguay", "Venezuela (Bolivarian Republic of)"],
+    "Central America": ["Belize", "Costa Rica", "El Salvador", "Guatemala", "Honduras", "Mexico", "Nicaragua", "Panama"],
+    "South America": ["Argentina", "Bolivia (Plurinational State of)", "Brazil", "Chile", "Colombia", "Ecuador", "Falkland Islands (Malvinas)", "French Guiana", "Guyana", "Paraguay", "Peru", "Suriname", "Uruguay", "Venezuela (Bolivarian Republic of)"],
+    "North America": ["Bermuda", "Canada", "Greenland", "Saint Pierre and Miquelon", "United States of America"]
+}
+
+
+oceania = {
+    "All    ": ["American Samoa", "Australia", "Cook Islands", "Fiji", "French Polynesia", "Guam", "Kiribati", "Marshall Islands", "Micronesia (Fed. States of)", "Nauru", "New Caledonia", "New Zealand", "Niue", "Northern Mariana Islands", "Palau", "Papua New Guinea", "Samoa", "Solomon Islands", "Tokelau", "Tonga", "Tuvalu", "Vanuatu", "Wallis and Futuna Islands"],
+    "Australia/New Zealand": ["Australia", "New Zealand"],
+    "Melanesia": ["Fiji", "New Caledonia", "Papua New Guinea", "Solomon Islands", "Vanuatu"],
+    "Micronesia": ["Guam", "Kiribati", "Marshall Islands", "Micronesia (Fed. States of)", "Nauru", "Northern Mariana Islands", "Palau"],
+    "Polynesia": ["American Samoa", "Cook Islands", "French Polynesia", "Niue", "Samoa", "Tokelau", "Tonga", "Tuvalu", "Wallis and Futuna Islands"]
+}
+
+regions = {
+    "Africa": africa,
+    "Asia": asia,
+    "Europe": europe,
+    "America": america,
+    "Oceania": oceania
+}
+
+# Função para a visualização do gráfico de séries temporais
+def time_series_chart():
+    st.title('Ranking Time Series')
 
     st.markdown("""
     <style>
@@ -61,7 +112,7 @@ def main():
             max-width: 100rem;
         }
         .st-emotion-cache-13ln4jf {
-            padding-left: 10rem;
+            padding-left: 5rem;
             padding-right: 1rem;
         }
         h2 {
@@ -76,10 +127,6 @@ def main():
     selected_countries = st.sidebar.multiselect('Select a country or countries:', locations, default=None, key='countries')
     selected_sex = st.sidebar.selectbox('Select the sex:', sexes, key='sex')
 
-    st.sidebar.header('Ranking Table')
-    selected_age_table = st.sidebar.selectbox('Select the specific age:', ages, key='age_table')
-    selected_year = st.sidebar.selectbox('Select the specific year:', list(range(1955, 2024)), key='year')
-
     # Filter dataframe based on selections for time series
     filtered_df_ts = life_expectancy_at_0_45_60_all_df[
         (life_expectancy_at_0_45_60_all_df['Sex'] == selected_sex) &
@@ -88,7 +135,7 @@ def main():
 
     # Plot time series chart
     fig = px.line(filtered_df_ts, x='Time', y='Value', color='Location',
-                  title=f'Life expectancy at age {selected_age_ts} for {selected_sex}',
+                  title=f'Life expectancy at age {selected_age_ts} for {selected_sex.lower()}',
                   labels={'Time': 'Year', 'Value': 'Years expected to live at the specific age', 'Location': 'Country'},
                   width=1100, height=800)
 
@@ -148,8 +195,45 @@ def main():
 
     st.plotly_chart(fig)
 
-    # Title for the table
-    st.title('Life Expectancy - Ranking Table')
+# Função para a visualização da tabela de classificação
+
+def ranking_table():
+    st.title('Ranking Table')
+
+    st.markdown("""
+    <style>
+        [data-testid=stSidebar] {
+            background-color: #0d214d;
+        }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 30rem;
+        }
+        .st-emotion-cache-1pbsqtx {
+            color: white;
+        }
+        .st-emotion-cache-1jmvea6 {
+            color: white;
+        }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 1rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            max-width: 100rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            padding-left: 5rem;
+            padding-right: 1rem;
+        }
+        h2 {
+            color: white;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Sidebar para a tabela de classificação
+    st.sidebar.header('Ranking Table')
+    selected_age_table = st.sidebar.selectbox('Select the specific age:', ages, key='age_table')
+    selected_year = st.sidebar.selectbox('Select the specific year:', list(range(1955, 2024)), key='year')
 
     # Calculate the year 5 years before the selected year
     previous_year = selected_year - 5
@@ -222,6 +306,146 @@ def main():
     )
 
     st.plotly_chart(table_fig)
+
+def other_grafic():
+    st.title('Dot Graphic')
+
+    st.sidebar.header('Dot Graphic')
+
+    # Cria listas para as regiões e subdivisões
+    region_names = list(regions.keys())
+    region_dict = {region: list(subregions.keys()) if isinstance(subregions, dict) else [region]
+                   for region, subregions in regions.items()}
+    subregion_dict = {subregion: countries for region, subregions in regions.items()
+                      for subregion, countries in (subregions.items() if isinstance(subregions, dict) else [(region, subregions)])}
+
+    # Adiciona seleção de região e subdivisão no sidebar
+    selected_region = st.sidebar.selectbox('Select the region:', region_names)
+    selected_subregion = st.sidebar.selectbox('Select the subregion:', region_dict[selected_region])
+
+    # Obtém os países da subregião selecionada
+    selected_countries = subregion_dict[selected_subregion]
+
+    # Seleção de idade e ano
+    selected_age = st.sidebar.selectbox('Select the specific age:', ages)
+    selected_year = st.sidebar.selectbox('Select the year:', list(range(1950, 2024)))
+
+    # Aplicando estilo ao sidebar
+    st.markdown("""
+    <style>
+        [data-testid=stSidebar] {
+            background-color: #0d214d;
+        }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 30rem;
+        }
+        .st-emotion-cache-1pbsqtx {
+            color: white;
+        }
+        .st-emotion-cache-1jmvea6 {
+            color: white;
+        }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 1rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            max-width: 100rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            padding-left: 5rem;
+            padding-right: 1rem;
+        }
+        h2 {
+            color: white;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Filtra o dataframe com base nas seleções
+    filtered_df = df[
+        (df['Time'] == selected_year) &
+        (df['Location'].isin(selected_countries)) &
+        (df['Age'] == selected_age)
+    ]
+
+    # Criação do gráfico de dispersão
+    scatter_fig = go.Figure()
+
+    # Separação dos dados por sexo
+    female_df = filtered_df[filtered_df['Sex'] == 'Female']
+    male_df = filtered_df[filtered_df['Sex'] == 'Male']
+
+    scatter_fig.add_trace(go.Scatter(
+        x=female_df['Location'],
+        y=female_df['Value'],
+        mode='markers',
+        name='Female',
+        marker=dict(size=10, symbol='circle', color='lightblue')
+    ))
+
+    scatter_fig.add_trace(go.Scatter(
+        x=male_df['Location'],
+        y=male_df['Value'],
+        mode='markers',
+        name='Male',
+        marker=dict(size=10, symbol='diamond', color=dark_blue)
+    ))
+
+    # Adiciona linhas conectando pontos para cada país
+    for country in selected_countries:
+        female_country_df = female_df[female_df['Location'] == country]
+        male_country_df = male_df[male_df['Location'] == country]
+
+        if not female_country_df.empty and not male_country_df.empty:
+            female_value = female_country_df['Value'].iloc[0]
+            male_value = male_country_df['Value'].iloc[0]
+
+            scatter_fig.add_trace(go.Scatter(
+                x=[country, country],
+                y=[female_value, male_value],
+                mode='lines',
+                line=dict(color='black', width=1),
+                showlegend=False
+            ))
+            scatter_fig.add_trace(go.Scatter(
+                x=[country, country],
+                y=[0, female_value],
+                mode='lines',
+                line=dict(color='black', width=1, dash='dot'),
+                showlegend=False
+            ))
+            scatter_fig.add_trace(go.Scatter(
+                x=[country, country],
+                y=[0, male_value],
+                mode='lines',
+                line=dict(color='black', width=1, dash='dot'),
+                showlegend=False
+            ))
+
+    scatter_fig.update_layout(
+        title=f'Life expectancy comparison at the specific age {selected_age} in {selected_year}',
+        xaxis_title='Country',
+        yaxis_title='Years expected to live',
+        height=800,
+        width=1100
+    )
+
+    st.plotly_chart(scatter_fig)
+
+# Função principal para controlar a navegação entre as páginas
+def main():
+    st.title('Life Expectancy Visualization')
+
+    # Adicionando opções para navegação entre as páginas
+    st.sidebar.header('Visualization')
+    page = st.sidebar.selectbox("Choose a visualization", ["Ranking Time Series", "Ranking Table", "Dot Graphic"])
+
+    if page == "Ranking Time Series":
+        time_series_chart()
+    elif page == "Ranking Table":
+        ranking_table()
+    elif page == "Dot Graphic":
+        other_grafic()
 
 if __name__ == "__main__":
     main()
