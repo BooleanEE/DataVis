@@ -87,6 +87,8 @@ regions = {
     "Oceania": oceania
 }
 
+
+
 # Função para a visualização do gráfico de séries temporais
 def time_series_chart():
     st.title('Ranking Time Series')
@@ -432,13 +434,92 @@ def other_grafic():
 
     st.plotly_chart(scatter_fig)
 
+# Função de visualização 'Time Series' atualizada
+def time_series():
+    st.title('Time Series')
+
+     # Aplicando estilo ao sidebar
+    st.markdown("""
+    <style>
+        [data-testid=stSidebar] {
+            background-color: #0d214d;
+        }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 30rem;
+        }
+        .st-emotion-cache-1pbsqtx {
+            color: white;
+        }
+        .st-emotion-cache-1jmvea6 {
+            color: white;
+        }
+        .st-emotion-cache-bm2z3a {
+            padding-right: 1rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            max-width: 100rem;
+        }
+        .st-emotion-cache-13ln4jf {
+            padding-left: 3rem;
+            padding-right: 1rem;
+        }
+        .st-emotion-cache-j6qv4b {
+              color: white;
+        }
+        h2 {
+            color: white;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Sidebar para seleção de sexo e país
+    st.sidebar.header('Time Series Filters')
+    selected_sex_ts = st.sidebar.radio('Select the sex:', ['Female', 'Male'])
+    selected_country_ts = st.sidebar.selectbox('Select a country:', locations)
+
+    # Filtrar dados para o país e sexo selecionados
+    country_data = df[
+        (df['Location'] == selected_country_ts) &
+        (df['Sex'] == selected_sex_ts)
+    ]
+
+    # Preparar dados para o gráfico
+    ages_to_plot = [0, 45, 65]
+    fig = go.Figure()
+
+    for age in ages_to_plot:
+        age_data = country_data[country_data['Age'] == age].sort_values('Time')
+        # Calcular a mudança percentual do ano anterior
+        age_data['Percent Change'] = age_data['Value'].pct_change() * 100
+
+        fig.add_trace(go.Scatter(
+            x=age_data['Time'],
+            y=age_data['Value'],
+            mode='lines+markers',
+            name=f'Age {age}',
+            hovertemplate='<b>Year:</b> %{x}<br>' +
+                          '<b>Years expected to live:</b> %{y}<br>' +
+                          '<b>Percent change from last year:</b> %{text}',
+            text=age_data['Percent Change'].apply(lambda x: f'Increased {x:.2f}%' if x > 0 else f'Decreased {-x:.2f}%').fillna('No data')
+        ))
+
+    # Configurações do layout do gráfico
+    fig.update_layout(
+        title=f'Life expectancy over time for {selected_sex_ts.lower()} in {selected_country_ts}',
+        xaxis_title='Year',
+        yaxis_title='Years expected to live',
+        legend_title='Age'
+    )
+
+    st.plotly_chart(fig)
+
 # Função principal para controlar a navegação entre as páginas
 def main():
     st.title('Life Expectancy Visualization')
 
     # Adicionando opções para navegação entre as páginas
     st.sidebar.header('Visualization')
-    page = st.sidebar.selectbox("Choose a visualization", ["Ranking Time Series", "Ranking Table", "Dot Graphic"])
+    page = st.sidebar.selectbox("Choose a visualization", ["Ranking Time Series", "Time Series", "Ranking Table", "Dot Graphic"])
 
     if page == "Ranking Time Series":
         time_series_chart()
@@ -446,6 +527,9 @@ def main():
         ranking_table()
     elif page == "Dot Graphic":
         other_grafic()
+    elif page == "Time Series":
+        time_series()
 
 if __name__ == "__main__":
     main()
+
